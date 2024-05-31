@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Result Portal</title>
+<style>
+/* Basic CSS for styling */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+.container {
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+h2 {
+    text-align: center;
+}
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+input[type="text"], input[type="password"], input[type="file"] {
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 80%;
+    max-width: 400px;
+}
+input[type="submit"] {
+    padding: 10px;
+    border: none;
+    background-color: #007bff;
+    color: #fff;
+    cursor: pointer;
+    border-radius: 4px;
+    width: 50%;
+    max-width: 200px;
+}
+.result-container {
+    margin-top: 20px;
+    text-align: center;
+}
+.admin-panel {
+    margin-top: 30px;
+}
+.admin-panel form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.admin-panel input[type="submit"] {
+    width: auto;
+    max-width: none;
+}
+.drag-drop-area {
+    border: 2px dashed #ccc;
+    border-radius: 4px;
+    padding: 20px;
+    width: 80%;
+    max-width: 400px;
+    text-align: center;
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+.drag-drop-area.drag-over {
+    border-color: #007bff;
+    background-color: #e6f7ff;
+}
+</style>
+</head>
+<body>
+<div class="container">
+<h2>Check Certificate</h2>
+<form id="resultForm">
+<input type="text" id="rollNumber" placeholder="Enter DOB" required>
+<input type="submit" value="Check Certificate">
+</form>
+<div class="result-container" id="resultContainer"></div>
+</div>
+<!-- Admin Panel Section -->
+<div class="container admin-panel" id="adminPanel">
+<h2>Admin Panel</h2>
+<form id="adminLoginForm">
+<input type="text" id="adminID" placeholder="Enter ID" required>
+<input type="password" id="adminPassword" placeholder="Enter Password" required>
+<input type="submit" value="Login">
+</form>
+<form id="adminAddResultForm" style="display:none;" enctype="multipart/form-data">
+<input type="text" id="adminFirstName" placeholder="Enter First Name" required>
+<input type="text" id="adminLastName" placeholder="Enter Last Name" required>
+<input type="text" id="adminRollNumber" placeholder="Enter DOB" required>
+<div class="drag-drop-area" id="dragDropArea">Drag & Drop PDF here or click to select file</div>
+<input type="file" id="resultFile" accept=".pdf" style="display:none;" required>
+<input type="submit" value="Add Result">
+</form>
+</div>
+<script>
+// Admin login credentials
+const adminID = "saket";
+const adminPassword = "saket@22";
+
+// JavaScript for handling form submissions
+document.getElementById('resultForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const rollNumber = document.getElementById('rollNumber').value;
+    const result = localStorage.getItem(rollNumber);
+    if (result) {
+        const memberDetails = JSON.parse(result);
+        document.getElementById('resultContainer').innerHTML = `
+            <p>First Name: ${memberDetails.firstName}</p>
+            <p>Last Name: ${memberDetails.lastName}</p>
+            <p>Roll Number: ${rollNumber}</p>
+            <embed src="${memberDetails.pdf}" type="application/pdf" width="100%" height="600px" />
+        `;
+    } else {
+        document.getElementById('resultContainer').innerText = "Result not found!";
+    }
+});
+
+document.getElementById('adminLoginForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const enteredID = document.getElementById('adminID').value;
+    const enteredPassword = document.getElementById('adminPassword').value;
+    if (enteredID === adminID && enteredPassword === adminPassword) {
+        document.getElementById('adminLoginForm').style.display = 'none';
+        document.getElementById('adminAddResultForm').style.display = 'block';
+    } else {
+        alert("Invalid ID or password. Please try again.");
+    }
+});
+
+const dragDropArea = document.getElementById('dragDropArea');
+const fileInput = document.getElementById('resultFile');
+
+dragDropArea.addEventListener('click', () => fileInput.click());
+
+['dragenter', 'dragover'].forEach(eventType => {
+    dragDropArea.addEventListener(eventType, event => {
+        event.preventDefault();
+        dragDropArea.classList.add('drag-over');
+    });
+});
+
+['dragleave', 'drop'].forEach(eventType => {
+    dragDropArea.addEventListener(eventType, event => {
+        event.preventDefault();
+        dragDropArea.classList.remove('drag-over');
+    });
+});
+
+dragDropArea.addEventListener('drop', event => {
+    const files = event.dataTransfer.files;
+    if (files.length > 0) {
+        fileInput.files = files;
+    }
+});
+
+document.getElementById('adminAddResultForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const firstName = document.getElementById('adminFirstName').value;
+    const lastName = document.getElementById('adminLastName').value;
+    const rollNumber = document.getElementById('adminRollNumber').value;
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+        const fileURL = e.target.result;
+        const memberDetails = {
+            firstName: firstName,
+            lastName: lastName,
+            pdf: fileURL
+        };
+        localStorage.setItem(rollNumber, JSON.stringify(memberDetails));
+        alert("Result added successfully!");
+        document.getElementById('adminAddResultForm').reset();
+    };
+    
+    reader.readAsDataURL(file);
+});
+</script>
+</body>
+</html>
